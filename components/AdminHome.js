@@ -35,7 +35,9 @@ export default class AdminHome extends Component {
       loading: false,
       valetCount : 0,
       availableValetDetails : [{"name":"Ram"},{"name":"Rahul"}],
+      availableValetDetailsName : ["RAM","RAHUL"],
       modalVisible: false,
+      isAssignModalVisible: false,
       searchText: '',
       activeReq: [],
       closedReq: [],
@@ -45,6 +47,7 @@ export default class AdminHome extends Component {
       emWidthArr: [185, 190],
       ipTableHead: ['Vehicle', 'Time', 'type', 'Status', 'Action'],
       ipWidthArr: [100, 50, 50, 80, 95],
+      assinedDriver: 'jai',
     };
     // this.getCars = this.getCars.bind(this);
     this.assignRequestModal = this.assignRequestModal.bind(this);
@@ -55,8 +58,9 @@ export default class AdminHome extends Component {
     this.getRequests();
   }
 
-  assignRequestModal(){
-    this.setState({ isModalVisible: !this.state.isModalVisible });
+  assignRequestModal(rowData){
+    console.log(rowData);
+    this.setState({ isAssignModalVisible: !this.state.isAssignModalVisible });
   }
 
   async getRequests() {
@@ -108,8 +112,12 @@ export default class AdminHome extends Component {
     console.log('shows list of available valets')
   }
 
-  toggleModalVisible() {
-    this.setState({modalVisible: !this.state.modalVisible});
+  toggleModalVisible(flag) {
+    if(flag){
+      this.setState({modalVisible: !this.state.modalVisible});
+    } else {
+      this.setState({isAssignModalVisible: !this.state.isAssignModalVisible});
+    }
     console.log("clicked")
   }
 
@@ -123,7 +131,7 @@ export default class AdminHome extends Component {
     <View style={styles.modalContent}>
       <View style={styles.modalHead}>
         <Left><Text>List of Available Valets</Text></Left>
-        <Right>{this._renderButton('X', () => this.toggleModalVisible())}</Right>
+        <Right>{this._renderButton('X', () => this.toggleModalVisible(true))}</Right>
       </View>
       <View style={styles.modalBody}>
         {
@@ -142,6 +150,12 @@ export default class AdminHome extends Component {
     var mins = givenDate.getMinutes()
     var time = hours.toString()+' : '+mins.toString()
     return time
+  }
+
+  onValueChange(value: string) {
+    this.setState({
+      assinedDriver: value,
+    });
   }
 
   render() {
@@ -193,10 +207,16 @@ export default class AdminHome extends Component {
     const ipTableData = [];
     for (let i = 0; i < 4; i += 1) {
       const rowData = ['KA-03NB4319', '08:30', 'Arrival', 'Requested',
-      <Button style={styles}  onPress={() => this.assignRequestModal()}>
+      <Button style={styles}  onPress={() => this.assignRequestModal(rowData)}>
         <Text style={{textAlign:'center',color:'white'}}>Collect Keys</Text>
       </Button>];
       ipTableData.push(rowData);
+    }
+    let valetItems = [];
+    if(this.state.availableValetDetails.length){
+      valetItems = this.state.availableValetDetails.map( (s, i) => {
+        return <Picker.Item key={i} value={s.name} label={s.name} />
+      });
     }
     return (
       <Container style={{ paddingTop: Constants.statusBarHeight}}>
@@ -222,7 +242,7 @@ export default class AdminHome extends Component {
             </Left>
             <Right>
             {/* {this._renderButton(`${this.state.valetCount}`+' Available Valet', () => this.toggleModalVisible())} */}
-            <TouchableOpacity style={styles.button} onPress={() => this.toggleModalVisible()}>
+            <TouchableOpacity style={styles.button} onPress={() => this.toggleModalVisible(false)}>
               <Text style={{color: '#fff'}}>{this.state.valetCount} Available Valet</Text>
             </TouchableOpacity>
             </Right>
@@ -321,43 +341,76 @@ export default class AdminHome extends Component {
               </View>
             </ScrollView>
           </View>
-          <Modal style={styles.modalContent} isVisible={this.state.isModalVisible}>
+          <Modal style={styles.assignModalContent} isVisible={this.state.isAssignModalVisible}>
             <View style={{ flex: 1, backgroundColor:'#FFFFFF', margin: 20, borderWidth: 2 }}>
                 <Left><Text style={styles.modalLabelText}>Assign Request to a Valet</Text></Left>
                 <Right>{this._renderButton('X', () => this.toggleModalVisible())}</Right>
                 <View style={{ marginTop: 60 }}>
-                    <List>
-                        <ListItem>
-                            <Col style={styles.fieldLabels}>
-                                <Text style={styles.labelText}>
-                                New Exit Time:
-                                </Text>
-                            </Col>
-                            <Col style={styles.fieldContents}>
-                                <Row><Col style={styles.dateText}><Text>{this.state.newExitTime}</Text></Col>
-                                {/* <DateTimePicker
-                                isVisible={this.state.isDateTimePickerVisibleExit}
-                                onConfirm={this.handleDatePickedExit}
-                                onCancel={this.hideDateTimePickerExit}
-                                mode="datetime"
-                                minimumDate={this.state.minimumDate}
-                                /> */}
-                                <Col style={styles.dateIcon}><Icon name="md-calendar" title="Show DatePicker" onPress={this.showDateTimePickerExit} /></Col></Row>
-                            </Col>
-                        </ListItem>
-                    </List>
-                    <Row style={{marginTop: 60}}>
-                        <Col>
-                            <Button block style={styles.buttonModal} onPress={() => this.changeExitTime()} >
-                                <Text style={{color: '#fff'}}>Submit</Text>
-                            </Button>
-                        </Col>
-                        <Col>
-                            <Button block style={styles.buttonModal} onPress={() => this.closeModal()} >
-                                <Text style={{color: '#fff'}}>Cancel</Text>
-                            </Button>
-                        </Col>
-                    </Row>
+                  <List>
+                    <ListItem style={styles.listItem}>
+                      <Col style={styles.fieldLabels}><Text style={styles.labelText}>Vehicle:</Text></Col>
+                      <Col style={styles.fieldContents}><Text></Text>
+                      </Col>
+                    </ListItem>
+
+                    <ListItem style={styles.listItem}>
+                      <Col style={styles.fieldLabels}>
+                        <Text style={styles.labelText}>
+                          Arrival Time:
+                        </Text>
+                      </Col>
+                      <Col style={styles.fieldContents}><Text></Text>
+                      </Col>
+                    </ListItem>
+
+                    <ListItem style={styles.listItem}>
+                      <Col style={styles.fieldLabels}>
+                        <Text style={styles.labelText}>
+                          Current Time:
+                        </Text>
+                      </Col>
+                      <Col style={styles.fieldContents}><Text></Text>
+                      </Col>
+                    </ListItem>
+
+                    <ListItem style={styles.listItem}>
+                      <Col style={styles.fieldLabels}>
+                        <Text style={styles.labelText}>
+                          Status:
+                        </Text>
+                      </Col>
+                      <Col style={styles.fieldContents}><Text></Text>
+                      </Col>
+                    </ListItem>
+
+                    <ListItem style={styles.listItem}>
+                      <Col style={styles.fieldLabels}>
+                        <Text style={styles.labelText}>
+                          Assign To:
+                        </Text>
+                      </Col>
+                      <Col style={styles.fieldContents}>
+                        <Picker iosHeader="Select one"
+                          mode="dropdown"
+                          selectedValue={this.state.assinedDriver}
+                          onValueChange={this.onValueChange.bind(this)} >
+                            {valetItems}
+                        </Picker>
+                      </Col>
+                    </ListItem>
+                  </List>
+                  <Row style={{marginTop: 60}}>
+                      <Col>
+                          <Button block style={styles.buttonModal} onPress={() => this.changeExitTime()} >
+                              <Text style={{color: '#fff'}}>Submit</Text>
+                          </Button>
+                      </Col>
+                      <Col>
+                          <Button block style={styles.buttonModal} onPress={() => this.closeModal()} >
+                              <Text style={{color: '#fff'}}>Cancel</Text>
+                          </Button>
+                      </Col>
+                  </Row>
                 </View>
             </View>
           </Modal>
@@ -430,5 +483,15 @@ const styles = StyleSheet.create({
   bottomModal: {
     justifyContent: 'flex-end',
     margin: 0,
-  }
+  },
+  assignModalContent: {
+    justifyContent: undefined,
+    alignItems: undefined,
+    borderRadius: 4,
+    borderColor: 'rgba(0, 0, 0, 0.1)',
+    marginTop: 150,
+    marginBottom: 150,
+    marginLeft: 10,
+    marginRight: 10
+  },
 });
